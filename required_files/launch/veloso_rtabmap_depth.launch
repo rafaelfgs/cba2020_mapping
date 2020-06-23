@@ -1,0 +1,100 @@
+<launch>
+
+
+    <node pkg    = "required_files"
+          type   = "output_to_world.py"
+          name   = "output_to_world_node"
+          args   = "veloso"
+          output = "screen"/>
+
+
+    <node pkg    = "imu_complementary_filter"
+          type   = "complementary_filter_node"
+          name   = "imu_filter_robot"
+          args   = "_fixed_frame:=robot_imu
+                    _orientation_stddev:=0.5"
+          output = "screen">
+
+        <remap from="/imu/data_raw" to="/robot_imu_raw"/>
+        <remap from="/imu/data"     to="/robot_imu"/>
+
+    </node>
+
+
+    <node pkg    = "robot_pose_ekf"
+          type   = "robot_pose_ekf"
+          name   = "robot_pose_ekf"
+          args   = "_vo_used:=false
+                    _output_frame:=wheel_ekf_init
+                    _base_footprint_frame:=wheel_ekf_pose"
+          output = "screen"
+          if     = "true">
+
+        <remap from = "/odom"     to = "/robot_odom"/>
+        <remap from = "/imu_data" to = "/robot_imu"/>
+        <remap from = "/robot_pose_ekf/odom_combined"
+               to = "/robot_pose_ekf/pose_combined"/>
+
+    </node>
+
+
+    <node pkg    = "imu_complementary_filter"
+          type   = "complementary_filter_node"
+          name   = "imu_filter_rtabmap"
+          args   = "_fixed_frame:=rtabmap_imu
+                    _orientation_stddev:=0.5"
+          output = "screen">
+
+        <remap from="/imu/data_raw" to="/rtabmap/imu_raw"/>
+        <remap from="/imu/data"     to="/rtabmap/imu"/>
+
+    </node>
+
+
+    <include file="$(find rtabmap_ros)/launch/rtabmap.launch" if="true">
+
+        <arg name ="stereo"                   value = "false"/>
+
+        <arg name = "rgb_topic"               value = "/rgb/image_rect"/>
+        <arg name = "depth_topic"             value = "/depth/image_rect"/>
+        <arg name = "camera_info_topic"       value = "/rgb/camera_info"/>
+        <arg name = "depth_camera_info_topic" value = "/depth/camera_info"/>
+
+        <arg name = "args"                    value = "--delete_db_on_start
+                                                       --Optimizer/GravitySigma 0.3
+                                                       --Odom/Holonomic false
+                                                       --Odom/ResetCountdown 1
+                                                       --Rtabmap/StartNewMapOnLoopClosure true
+                                                       --Odom/Strategy 1
+                                                       --Reg/Force3DoF false"/>
+
+        <arg name = "queue_size"              value = "10"/>
+        <arg name = "approx_sync"             value = "true"/>
+        <arg name = "wait_imu_to_init"        value = "true"/>
+        <arg name = "visual_odometry"         value = "true"/>
+
+        <arg name = "odom_topic"              value = "/rtabmap/odom"/>
+        <arg name = "imu_topic"               value = "/rtabmap/imu"/>
+        <arg name = "map_frame_id"            value = "rtabmap_init"/>
+        <arg name = "frame_id"                value = "rtabmap_pose"/>
+        <arg name = "use_sim_time"            value = "true"/>
+        <arg name = "rtabmapviz"              value = "true"/>
+        <arg name = "rviz"                    value = "false"/>
+
+    </include>
+
+
+    <node pkg    = "point_cloud_converter"
+          type   = "point_cloud_converter_node"
+          name   = "convert_node"
+          args   = "/t265/odom/sample"
+          output = "screen"
+          if     = "true">
+
+        <remap from="/points2_in" to="/rtabmap/octomap_occupied_space"/>
+        <remap from="/points_out" to="/cloud/points"/>
+
+    </node>
+
+
+</launch>

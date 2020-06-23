@@ -1,0 +1,112 @@
+<launch>
+
+
+    <node pkg    = "image_transport"
+          type   = "republish"
+          name   = "republish_left"
+          args   = "compressed in:=/left/image_raw/
+                    raw out:=/left/image_raw/"
+          output = "screen"
+          if     = "true"/>
+
+    <node pkg    = "image_transport"
+          type   = "republish"
+          name   = "republish_right"
+          args   = "compressed in:=/right/image_raw/
+                    raw out:=/right/image_raw/"
+          output = "screen"
+          if     = "true"/>
+
+    <node pkg    = "required_files"
+          type   = "stereo_to_depth.py"
+          name   = "stereo_to_depth_node"
+          args   = "360"
+          output = "screen"
+          if     = "true"/>
+
+    <node pkg    = "required_files"
+          type   = "repub_joints.py"
+          name   = "repub_joints_node"
+          args   = ""
+          output = "screen"
+          if     = "true"/>
+
+    <node pkg    = "required_files"
+          type   = "odom_bags.py"
+          name   = "odom_bags_node"
+          args   = ""
+          output = "screen"
+          if     = "true"/>
+
+    <node pkg    = "required_files"
+          type   = "output_to_world.py"
+          name   = "output_to_world_node"
+          args   = "corredor"
+          output = "screen"
+          if     = "true"/>
+
+
+    <node pkg    = "robot_pose_ekf"
+          type   = "robot_pose_ekf"
+          name   = "robot_pose_ekf"
+          args   = "_vo_used:=false
+                    _output_frame:=wheel_ekf_init
+                    _base_footprint_frame:=wheel_ekf_pose"
+          output = "screen"
+          if     = "true">
+
+        <remap from = "/odom"     to = "/robot_odom"/>
+        <remap from = "/imu_data" to = "/robot_imu"/>
+        <remap from = "/robot_pose_ekf/odom_combined"
+               to = "/robot_pose_ekf/pose_combined"/>
+
+    </node>
+
+
+    <include file = "$(find rtabmap_ros)/launch/rtabmap.launch" if = "true">
+
+        <arg name ="stereo"                   value = "false"/>
+
+        <arg name = "rgb_topic"               value = "/rgb/image_rect"/>
+        <arg name = "depth_topic"             value = "/depth/image_rect"/>
+        <arg name = "camera_info_topic"       value = "/rgb/camera_info"/>
+        <arg name = "depth_camera_info_topic" value = "/depth/camera_info"/>
+
+        <arg name = "args"                    value = "--delete_db_on_start
+                                                       --Optimizer/GravitySigma 0.3
+                                                       --Odom/Holonomic false
+                                                       --Odom/ResetCountdown 1
+                                                       --Rtabmap/StartNewMapOnLoopClosure true
+                                                       --Odom/Strategy 1
+                                                       --Reg/Force3DoF true"/>
+
+        <arg name = "queue_size"              value = "10"/>
+        <arg name = "approx_sync"             value = "true"/>
+        <arg name = "wait_imu_to_init"        value = "true"/>
+        <arg name = "visual_odometry"         value = "true"/>
+
+        <arg name = "odom_topic"              value = "/rtabmap/odom"/>
+        <arg name = "imu_topic"               value = "/rtabmap/imu"/>
+        <arg name = "map_frame_id"            value = "rtabmap_init"/>
+        <arg name = "frame_id"                value = "rtabmap_pose"/>
+        <arg name = "use_sim_time"            value = "true"/>
+        <arg name = "rtabmapviz"              value = "true"/>
+        <arg name = "rviz"                    value = "false"/>
+
+    </include>
+
+
+    <node pkg    = "point_cloud_converter"
+          type   = "point_cloud_converter_node"
+          name   = "convert_node"
+          args   = "/t265/odom/sample"
+          output = "screen"
+          if     = "true">
+
+        <remap from="/points2_in" to="/rtabmap/octomap_occupied_space"/>
+        <remap from="/points_out" to="/cloud/points"/>
+
+    </node>
+
+
+</launch>

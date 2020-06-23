@@ -1,0 +1,35 @@
+<launch>
+
+
+    <arg name="frame_id"  default="d435i_link"/>
+    <arg name="freq_rate" default="60"/>
+
+
+    <node pkg    = "imu_complementary_filter"
+          type   = "gyracc_to_imu.py"
+          name   = "gyracc_to_imu"
+          args   = "$(arg frame_id)
+                    $(arg freq_rate)"
+          output = "screen">
+
+        <remap from="/accel/data" to="/d435i/accel/sample"/>
+        <remap from="/gyro/data"  to="/d435i/gyro/sample"/>
+        <remap from="/imu/data"   to="/d435i/imu/sample"/>
+
+    </node>
+
+
+    <node pkg    = "imu_complementary_filter"
+          type   = "complementary_filter_node"
+          name   = "imu_filter_d435i"
+          args   = "_fixed_frame:=$(arg frame_id)
+                    _orientation_stddev:=0.5"
+          output = "screen">
+
+        <remap from="/imu/data_raw" to="/d435i/imu/sample"/>
+        <remap from="/imu/data"     to="/imu/data"/>
+
+    </node>
+
+
+</launch>
