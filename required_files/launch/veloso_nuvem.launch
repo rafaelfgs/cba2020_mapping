@@ -13,7 +13,7 @@
           name   = "change_depth_rate_node"
           args   = "veloso"
           output = "screen"
-          if     = "true"/>
+          if     = "false"/>
 
     <node pkg    = "required_files"
           type   = "output_to_world.py"

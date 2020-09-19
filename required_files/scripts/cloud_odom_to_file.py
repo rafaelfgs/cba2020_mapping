@@ -13,10 +13,10 @@ from sensor_msgs.msg import PointCloud
 place = sys.argv[1] # corredor, veloso
 mode  = sys.argv[2] # nuvem, depth, triang, stereo
 
-file_pcl   = "/mnt/WD500/Espeleo/CBA/results/" + place + "_pointcloud_" + mode + ".pcd"
-file_t265  = "/mnt/WD500/Espeleo/CBA/results/" + place + "_t265.txt"
-file_wheel = "/mnt/WD500/Espeleo/CBA/results/" + place + "_wheel.txt"
-file_odom  = "/mnt/WD500/Espeleo/CBA/results/" + place + "_" + mode + ".txt"
+file_pcl   = "/mnt/WD500/UFMG/CBA/results/" + place + "_pointcloud_" + mode + ".pcd"
+file_t265  = "/mnt/WD500/UFMG/CBA/results/" + place + "_t265.txt"
+file_wheel = "/mnt/WD500/UFMG/CBA/results/" + place + "_wheel.txt"
+file_odom  = "/mnt/WD500/UFMG/CBA/results/" + place + "_" + mode + ".txt"
 
 px_t265,  py_t265,  pz_t265,  qx_t265,  qy_t265,  qz_t265,  qw_t265,  t_t265,  n_t265  = [], [], [], [], [], [], [], [], 0
 px_odom,  py_odom,  pz_odom,  qx_odom,  qy_odom,  qz_odom,  qw_odom,  t_odom,  n_odom  = [], [], [], [], [], [], [], [], 0
@@ -125,15 +125,15 @@ def main_function():
     
     bool_input = [False, False, False, False]
     
-    if raw_input("Save Pointcloud file? (y/n): ") == "y":
+    if raw_input("Save Pointcloud File? (y/n): ") == "y":
         bool_input[0] = True
     if mode != "nuvem":
-        if raw_input("Save RTAB-Map " + mode + " Odometry file? (y/n): ") == "y":
+        if raw_input("Save RTAB-Map " + mode + " Odometry File? (y/n): ") == "y":
             bool_input[1] = True
         if (place == "corredor" and mode == "triang") or (place == "veloso" and mode == "depth"):
-            if raw_input("Save T265 Odometry file? (y/n): ") == "y":
+            if raw_input("Save T265 Odometry File? (y/n): ") == "y":
                 bool_input[2] = True
-            if raw_input("Save EKF Odometry file? (y/n): ") == "y":
+            if raw_input("Save EKF Odometry File? (y/n): ") == "y":
                 bool_input[3] = True
     
     
@@ -162,7 +162,7 @@ def main_function():
     
     
     
-    if raw_input("Start subscriptions? (y/n): ") == "y":
+    if raw_input("Start Subscriptions? (y/n): ") == "y":
         if bool_input[0] and os.path.exists(file_pcl):   os.remove(file_pcl)
         if bool_input[1] and os.path.exists(file_odom):  os.remove(file_odom)
         if bool_input[2] and os.path.exists(file_t265):  os.remove(file_t265)
@@ -216,7 +216,7 @@ def main_function():
                 
                 f.write("\n%s %s %s %s" % (xyz_pcl[k].x, xyz_pcl[k].y, xyz_pcl[k].z, rgb_pcl[k]))
                 k += 1
-                sys.stdout.write("\rSaving PointCloud File... %5.1f%%" % (100.0*k/num_pcl))
+                sys.stdout.write("\rSaving PointCloud File (%d)... %5.1f%%" % (num_pcl, 100.0*k/num_pcl))
                 sys.stdout.flush()
                 
             sys.stdout.write("\n")

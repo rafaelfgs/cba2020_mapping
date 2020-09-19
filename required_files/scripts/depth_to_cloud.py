@@ -16,12 +16,12 @@ from tf.transformations import quaternion_from_euler
 
 
 
-dmin = 0.2
-dmax = 4.5
-period_ms = 4500
+dmin = 2.0 # 0.2
+dmax = 5.0 # 4.5
+period_ms = 5000 #  4500
 
 v_rs = (0.27, 0.0, 0.35)
-q_rs = quaternion_from_euler(0.0, pi/180*7.0, 0.0)
+q_rs = quaternion_from_euler(0.0, pi/180*7, pi/180*1)
 
 msg_ready = [False, False, False, False, False]
 code_ready = True
@@ -75,8 +75,8 @@ def callback_depth_img(data):
 def callback_depth_info(data):
     if code_ready:
         global fx_depth, fy_depth, msg_cloud, msg_ready
-        fx_depth = data.K[0]
-        fy_depth = data.K[4]
+        fx_depth = data.K[0] * 1.5
+        fy_depth = data.K[4] * 1.5
         msg_cloud.header.stamp = copy(data.header.stamp)
         msg_ready[3] = True
 
@@ -99,13 +99,13 @@ def main_function():
     rospy.Subscriber("/rgb/camera_info",   CameraInfo, callback_rgb_info)
     rospy.Subscriber("/depth/image_rect",  Image,      callback_depth_img)
     rospy.Subscriber("/depth/camera_info", CameraInfo, callback_depth_info)
-    rospy.Subscriber("/t265/odom/sample",  Odometry,   callback_odom)
+    rospy.Subscriber("/t265/odom_world",   Odometry,   callback_odom)
     
     pub_cloud = rospy.Publisher("/cloud/points", PointCloud, queue_size=1)
     
     msg_cloud.header.frame_id = "world"
     msg_cloud.channels = [ChannelFloat32()]
-    msg_cloud.channels[0].name = "rgb"
+    msg_cloud.channels[0].name = "rgb" #"intensity"
     num = 0
     
     t = time.time()
@@ -160,20 +160,27 @@ def main_function():
             
             rgb = rgb_img.reshape(m*n,3)[idx].astype(int)
             
+            rgb_hex = (rgb[:,0]<<16) + (rgb[:,1]<<8) + (rgb[:,2])
+            
+            for k in range(num):
+                rgb_float = struct.unpack("f", struct.pack("i", rgb_hex[k]))[0]
+                msg_cloud.channels[0].values += [rgb_float]
+            
+            
 #            rgb_float = numpy.mean(rgb,1)
 #            
 #            rgb_float = (rgb[:,0]).astype(int)<<16 + (rgb[:,1]).astype(int)<<8 + (rgb[:,2]).astype(int)
-            rgb_float = (rgb[:,0]).astype(int)<<16 | (rgb[:,1]).astype(int)<<8 | (rgb[:,2]).astype(int)
+#            rgb_float = (rgb[:,0]).astype(int)<<16 | (rgb[:,1]).astype(int)<<8 | (rgb[:,2]).astype(int)
 #            rgb_float = rgb[:,0]<<16 + rgb[:,1]<<8 + rgb[:,2]
 #            rgb_float = rgb[:,0]<<16 | rgb[:,1]<<8 | rgb[:,2]
 #            rgb_float = rgb[:,0]<<32 + rgb[:,1]<<16 + rgb[:,2]<<8 + numpy.repeat(255,num)
 #            rgb_float = rgb[:,0]<<32 | rgb[:,1]<<16 | rgb[:,2]<<8 | numpy.repeat(255,num)
-            
+#            
 #            for k in range(num):
 #                rgb_float = struct.unpack('I', struct.pack('BBBB', rgb[k,2], rgb[k,1], rgb[k,0], 255))[0]
 #                msg_cloud.channels[0].values += [rgb_float]
 #            
-            msg_cloud.channels[0].values += rgb_float.tolist()
+#            msg_cloud.channels[0].values += rgb_float.tolist()
             
             k0 = len(msg_cloud.points)
             msg_cloud.points += [None] * num
